@@ -104,7 +104,7 @@ export class DolbyWatchService implements OnApplicationBootstrap {
     const dates = buildDateRange(this.horizonDays);
     const currentSnapshot: Snapshot = {};
     let coldStartTotal = 0;
-    let notifiedCount = 0;
+    let notified = false;
     let snapshotChanged = false;
 
     this.logger.log(`사이클 시작 (${dates.length}일치 조회)`);
@@ -141,7 +141,7 @@ export class DolbyWatchService implements OnApplicationBootstrap {
             await this.telegramService.sendMessage(
               buildNewScreeningsMessage(date, newScreenings),
             );
-            notifiedCount += newScreenings.length;
+            notified = true;
           }
         }
 
@@ -177,7 +177,7 @@ export class DolbyWatchService implements OnApplicationBootstrap {
           `현재 예정된 DOLBY CINEMA 상영: ${coldStartTotal}건\n` +
           `앞으로 새로 열리는 상영만 알려드립니다.`,
       );
-    } else if (notifiedCount === 0) {
+    } else if (!notified) {
       this.logger.log('신규 상영 없음 — 알림 없이 대기 (정상 동작)');
     }
   }
