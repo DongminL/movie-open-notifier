@@ -1,0 +1,25 @@
+name: CGV CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/cgv-open-notifier/**'
+      - 'libs/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'eslint.config.mjs'
+      - 'nest-cli.json'
+      - '.github/workflows/cgv-ci.yml'
+      - '.github/workflows/_reusable-ci.yml'
+
+concurrency:
+  group: cgv-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_reusable-ci.yml
+    with:
+      app_dir: apps/cgv-open-notifier
+      build_script: build:cgv
