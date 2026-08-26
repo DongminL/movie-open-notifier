@@ -4,7 +4,7 @@
   "monorepo": true,
   "root": "apps/cgv-open-notifier",
   "compilerOptions": {
-    "deleteOutDir": true,
+    "deleteOutDir": false,
     "webpack": false,
     "tsConfigPath": "apps/cgv-open-notifier/tsconfig.build.json"
   },
@@ -35,6 +35,15 @@
       "sourceRoot": "libs/telegram/src",
       "compilerOptions": {
         "tsConfigPath": "libs/telegram/tsconfig.lib.json"
+      }
+    },
+    "megabox-open-notifier": {
+      "type": "application",
+      "root": "apps/megabox-open-notifier",
+      "entryFile": "main",
+      "sourceRoot": "apps/megabox-open-notifier/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/megabox-open-notifier/tsconfig.build.json"
       }
     }
   }
