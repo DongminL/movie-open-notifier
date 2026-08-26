@@ -81,11 +81,7 @@
     "transform": {
       "^.+\\.(t|j)s$": [
         "ts-jest",
-        {
-          "tsconfig": {
-            "isolatedModules": false
-          }
-        }
+        { "tsconfig": { "isolatedModules": false } }
       ]
     },
     "moduleNameMapper": {
