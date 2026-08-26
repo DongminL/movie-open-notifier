@@ -1,0 +1,35 @@
+name: Reusable CI
+
+on:
+  workflow_call:
+    inputs:
+      app_dir:
+        description: 'e.g. apps/cgv-open-notifier'
+        required: true
+        type: string
+      build_script:
+        description: 'npm script name, e.g. build:cgv'
+        required: true
+        type: string
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npx eslint "${{ inputs.app_dir }}/**/*.ts" "libs/**/*.ts"
+
+      - name: Unit test
+        run: npx jest ${{ inputs.app_dir }} libs
+
+      - name: Build
+        run: npm run ${{ inputs.build_script }}
