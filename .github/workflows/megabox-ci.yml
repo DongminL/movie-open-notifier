@@ -1,0 +1,25 @@
+name: Megabox CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/megabox-open-notifier/**'
+      - 'libs/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'eslint.config.mjs'
+      - 'nest-cli.json'
+      - '.github/workflows/megabox-ci.yml'
+      - '.github/workflows/_reusable-ci.yml'
+
+concurrency:
+  group: megabox-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_reusable-ci.yml
+    with:
+      app_dir: apps/megabox-open-notifier
+      build_script: build:megabox
