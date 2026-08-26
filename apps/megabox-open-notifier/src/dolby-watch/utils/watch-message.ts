@@ -1,8 +1,8 @@
 import { Screening } from '../../megabox/dto/screening.dto';
+import { BRCH_NO } from '../../megabox/megabox-schedule-fetcher.service';
 import { buildMegaboxWebUrl } from './megabox-link-generator';
 
 export const WATCH_THEATER = '남양주현대아울렛스페이스원';
-const WATCH_BRCH_NO = '0019';
 
 /** 날짜 하나에 대한 신규 상영 알림 메시지 */
 export function buildNewScreeningsMessage(
@@ -33,7 +33,7 @@ export function buildNewScreeningsMessage(
     body += '\n';
   });
 
-  body += `[예매하러 가기](${buildMegaboxWebUrl({ brchNo: WATCH_BRCH_NO, playDe: date })})`;
+  body += `[예매하러 가기](${buildMegaboxWebUrl({ brchNo: BRCH_NO, playDe: date })})`;
 
   return body;
 }

@@ -7,7 +7,7 @@ import {
 } from './dto/screening.dto';
 
 const RESPONSE_TIMEOUT_MS = 15000;
-const BRCH_NO = '0019'; // 남양주현대아울렛스페이스원
+export const BRCH_NO = '0019'; // 남양주현대아울렛스페이스원
 const THEAB_KIND_CD = 'DBC'; // DOLBY CINEMA
 
 /*
