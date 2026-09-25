@@ -35,6 +35,14 @@ describe('TelegramService', () => {
     });
   });
 
+  it('sends to the given chatId instead of the default when provided', async () => {
+    await service.sendMessage('메시지', 'other-chat-id');
+
+    expect(sendMessage).toHaveBeenCalledWith('other-chat-id', '메시지', {
+      parse_mode: 'Markdown',
+    });
+  });
+
   it('truncates messages longer than 4000 characters', async () => {
     const longMessage = 'a'.repeat(4100);
 
