@@ -13,9 +13,15 @@ describe('buildScheduleMessage', () => {
       },
     ]);
 
-    const result = buildScheduleMessage(map, '용산아이파크몰', '20260825');
+    const result = buildScheduleMessage(
+      map,
+      '용산아이파크몰',
+      '20260825',
+      '4DX',
+    );
 
     expect(result).toContain('CGV 용산아이파크몰 상영 시간표');
+    expect(result).toContain('4DX 오픈');
     expect(result).toContain('2026년 08월 25일');
     expect(result).toContain('🎬 영화 제목');
     expect(result).toContain('10:00 ~ 12:20 | 좌석수: 100/120');
@@ -23,7 +29,7 @@ describe('buildScheduleMessage', () => {
 
   it('throws when the date is not 8 digits', () => {
     expect(() =>
-      buildScheduleMessage(new Map(), '용산아이파크몰', '2026825'),
+      buildScheduleMessage(new Map(), '용산아이파크몰', '2026825', 'IMAX'),
     ).toThrow('date의 형식은 20250101 이어야 합니다.');
   });
 });

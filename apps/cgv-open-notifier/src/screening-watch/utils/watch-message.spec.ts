@@ -16,8 +16,11 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
 
 describe('buildNewScreeningsMessage', () => {
   it('formats the added screenings into a schedule message with a booking link', () => {
-    const message = buildNewScreeningsMessage('20260825', [buildScreening({})]);
+    const message = buildNewScreeningsMessage('20260825', 'IMAX', [
+      buildScreening({}),
+    ]);
 
+    expect(message).toContain('IMAX 오픈');
     expect(message).toContain('CGV 용산아이파크몰 상영 시간표');
     expect(message).toContain('🎬 영화 제목');
     expect(message).toContain('10:00 ~ 12:20 | 좌석수: 100/120');
