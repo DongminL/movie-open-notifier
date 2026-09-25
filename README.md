@@ -4,7 +4,7 @@ CGV, 메가박스의 특별관(IMAX, DOLBY CINEMA) 예매 오픈을 감시해서
 
 ## 프로젝트 소개
 
-- `apps/cgv-open-notifier` — CGV 예매 오픈(IMAX 등)을 감시해 텔레그램으로 알림
+- `apps/cgv-open-notifier` — CGV 예매 오픈(IMAX, 4DX)을 감시해 텔레그램으로 알림
 - `apps/megabox-open-notifier` — 메가박스 예매 오픈(DOLBY CINEMA)을 감시해 텔레그램으로 알림
 - `libs/common` — 공통 유틸/설정 (`@app/common`)
 - `libs/telegram` — 텔레그램 알림 연동 (`@app/telegram`)
@@ -45,11 +45,13 @@ CGV, 메가박스의 특별관(IMAX, DOLBY CINEMA) 예매 오픈을 감시해서
    `apps/cgv-open-notifier/.env`
    ```env
    TELEGRAM_BOT_TOKEN=
-   TELEGRAM_CHAT_ID=
+   TELEGRAM_CHAT_ID_IMAX=       # IMAX 알림 채팅방 (오류 알림도 여기로 전송)
+   TELEGRAM_CHAT_ID_4DX=        # 4DX 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_IMAX 사용)
    CGV_IMAX_URL=https://cgv.co.kr/cnm/movieBook/cinema
    WATCH_HORIZON_DAYS=25
    WATCH_POLL_INTERVAL_SEC=22
    IMAX_SNAPSHOT_PATH=data/imax-snapshot.json
+   FOURDX_SNAPSHOT_PATH=data/4dx-snapshot.json
    ```
 
    `apps/megabox-open-notifier/.env`
