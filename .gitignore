@@ -35,7 +35,7 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# IMAX watch snapshot state (runtime data, not source)
+# CGV/Megabox watch snapshot state (runtime data, not source)
 /data
 
 # dotenv environment variable files
