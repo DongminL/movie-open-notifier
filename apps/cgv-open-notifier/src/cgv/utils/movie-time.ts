@@ -10,6 +10,7 @@ export function buildScheduleMessage(
   movieTimeMap: Map<string, MovieTimeOption[]>,
   targetTheater: string,
   date: string,
+  label: string,
 ): string {
   if (date.length !== 8) {
     throw new Error('date의 형식은 20250101 이어야 합니다.');
@@ -18,7 +19,7 @@ export function buildScheduleMessage(
   let result =
     `CGV ${targetTheater} 상영 시간표\n` +
     `${date.substring(0, 4)}년 ${date.substring(4, 6)}월 ${date.substring(6, 8)}일\n` +
-    'IMAX 오픈\n\n';
+    `${label} 오픈\n\n`;
 
   movieTimeMap.forEach((timeList, movie) => {
     result += `🎬 ${movie}\n`;

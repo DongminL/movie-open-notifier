@@ -19,14 +19,18 @@ export class TelegramService {
     this.chatId = this.configService.getOrThrow<string>('TELEGRAM_CHAT_ID');
   }
 
-  async sendMessage(message: string): Promise<void> {
+  /** chatId를 생략하면 TELEGRAM_CHAT_ID(기본 IMAX 채팅방)로 전송 */
+  async sendMessage(
+    message: string,
+    chatId: string = this.chatId,
+  ): Promise<void> {
     const truncated =
       message.length > MAX_MESSAGE_LENGTH
         ? `${message.substring(0, MAX_MESSAGE_LENGTH)}\n\n...(생략)`
         : message;
 
     try {
-      await this.bot.telegram.sendMessage(this.chatId, truncated, {
+      await this.bot.telegram.sendMessage(chatId, truncated, {
         parse_mode: 'Markdown',
       });
     } catch (error) {

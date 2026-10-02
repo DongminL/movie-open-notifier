@@ -15,6 +15,7 @@ const formatTime = (raw: string): string =>
 /** 날짜 하나에 대한 신규 상영 알림 메시지 */
 export function buildNewScreeningsMessage(
   date: string,
+  label: string,
   added: Screening[],
 ): string {
   const movieTimeMap = new Map<string, MovieTimeOption[]>();
@@ -39,7 +40,7 @@ export function buildNewScreeningsMessage(
     siteNm: WATCH_THEATER,
     scnYmd: date,
   };
-  let body = buildScheduleMessage(movieTimeMap, WATCH_THEATER, date);
+  let body = buildScheduleMessage(movieTimeMap, WATCH_THEATER, date, label);
   body += `[예매하러 가기](${buildCgvWebUrl(cgvParams)})`;
 
   return body;
