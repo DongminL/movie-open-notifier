@@ -9,6 +9,7 @@ import { Screening } from '../cgv/dto/screening.dto';
 import { ScreeningWatchService } from './screening-watch.service';
 import { FourDxWatchStrategy } from './strategies/four-dx-watch.strategy';
 import { ImaxWatchStrategy } from './strategies/imax-watch.strategy';
+import { ScreenXWatchStrategy } from './strategies/screen-x-watch.strategy';
 import { WatchStrategy } from './strategies/watch-strategy';
 
 jest.mock('@app/common', () => ({
@@ -35,6 +36,8 @@ const imaxScreening = buildScreening({
   scnsEnm: 'IMAX',
 });
 const fourDxScreening = buildScreening({ scnSseq: '2', tcscnsGradCd: '02' });
+const screenXScreening = buildScreening({ scnSseq: '4', tcscnsGradCd: '04' });
+const allScreenings = [imaxScreening, fourDxScreening, screenXScreening];
 
 describe('ScreeningWatchService', () => {
   let dir: string;
@@ -52,8 +55,10 @@ describe('ScreeningWatchService', () => {
     const strategyValues: Record<string, string> = {
       TELEGRAM_CHAT_ID_IMAX: 'imax-chat',
       TELEGRAM_CHAT_ID_4DX: '4dx-chat',
+      TELEGRAM_CHAT_ID_SCREENX: 'screenx-chat',
       IMAX_SNAPSHOT_PATH: join(dir, 'imax.json'),
       FOURDX_SNAPSHOT_PATH: join(dir, '4dx.json'),
+      SCREENX_SNAPSHOT_PATH: join(dir, 'screenx.json'),
     };
     const strategyConfig = {
       getOrThrow: (key: string) => strategyValues[key],
@@ -61,6 +66,7 @@ describe('ScreeningWatchService', () => {
     const strategies: WatchStrategy[] = [
       new ImaxWatchStrategy(strategyConfig),
       new FourDxWatchStrategy(strategyConfig),
+      new ScreenXWatchStrategy(strategyConfig),
     ];
     const config = {
       // buildDateRange가 3일 후부터 시작하므로 4이면 조회 날짜가 정확히 1개
@@ -84,12 +90,12 @@ describe('ScreeningWatchService', () => {
     (service as unknown as { runCycle(): Promise<void> }).runCycle();
 
   it('fetches once per date and starts each strategy in its own chat', async () => {
-    fetchScreenings.mockResolvedValue([imaxScreening, fourDxScreening]);
+    fetchScreenings.mockResolvedValue(allScreenings);
 
     await runCycle();
 
     expect(fetchScreenings).toHaveBeenCalledTimes(1);
-    expect(sendMessage).toHaveBeenCalledTimes(2);
+    expect(sendMessage).toHaveBeenCalledTimes(3);
     expect(sendMessage).toHaveBeenCalledWith(
       expect.stringContaining('IMAX 감시를 시작'),
       'imax-chat',
@@ -98,10 +104,14 @@ describe('ScreeningWatchService', () => {
       expect.stringContaining('4DX 감시를 시작'),
       '4dx-chat',
     );
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('SCREENX 감시를 시작'),
+      'screenx-chat',
+    );
   });
 
   it('notifies only the 4DX chat when a new 4DX screening opens', async () => {
-    fetchScreenings.mockResolvedValue([imaxScreening, fourDxScreening]);
+    fetchScreenings.mockResolvedValue(allScreenings);
     await runCycle();
     sendMessage.mockClear();
 
@@ -109,11 +119,7 @@ describe('ScreeningWatchService', () => {
       scnSseq: '3',
       tcscnsGradCd: '02',
     });
-    fetchScreenings.mockResolvedValue([
-      imaxScreening,
-      fourDxScreening,
-      newFourDx,
-    ]);
+    fetchScreenings.mockResolvedValue([...allScreenings, newFourDx]);
     await runCycle();
 
     expect(sendMessage).toHaveBeenCalledTimes(1);
@@ -123,21 +129,41 @@ describe('ScreeningWatchService', () => {
     );
   });
 
+  it('notifies only the SCREENX chat when a new SCREENX screening opens', async () => {
+    fetchScreenings.mockResolvedValue(allScreenings);
+    await runCycle();
+    sendMessage.mockClear();
+
+    const newScreenX = buildScreening({ scnSseq: '5', tcscnsGradCd: '04' });
+    fetchScreenings.mockResolvedValue([...allScreenings, newScreenX]);
+    await runCycle();
+
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('SCREENX 오픈'),
+      'screenx-chat',
+    );
+  });
+
   it('keeps the other strategies running when one fails to save its snapshot', async () => {
     await mkdir(join(dir, 'imax.json')); // 파일이 아닌 디렉터리라 IMAX 스냅샷 저장이 실패한다
-    fetchScreenings.mockResolvedValue([imaxScreening, fourDxScreening]);
+    fetchScreenings.mockResolvedValue(allScreenings);
 
     await expect(runCycle()).resolves.toBeUndefined();
 
-    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage).toHaveBeenCalledTimes(2);
     expect(sendMessage).toHaveBeenCalledWith(
       expect.stringContaining('4DX 감시를 시작'),
       '4dx-chat',
     );
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('SCREENX 감시를 시작'),
+      'screenx-chat',
+    );
   });
 
   it('does not notify anyone when nothing changed after the cold start', async () => {
-    fetchScreenings.mockResolvedValue([imaxScreening, fourDxScreening]);
+    fetchScreenings.mockResolvedValue(allScreenings);
     await runCycle();
     sendMessage.mockClear();
 

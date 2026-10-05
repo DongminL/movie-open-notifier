@@ -5,6 +5,7 @@ import { TelegramModule } from '@app/telegram';
 import { ScreeningWatchService } from './screening-watch.service';
 import { FourDxWatchStrategy } from './strategies/four-dx-watch.strategy';
 import { ImaxWatchStrategy } from './strategies/imax-watch.strategy';
+import { ScreenXWatchStrategy } from './strategies/screen-x-watch.strategy';
 import { WATCH_STRATEGIES, WatchStrategy } from './strategies/watch-strategy';
 
 @Module({
@@ -12,11 +13,15 @@ import { WATCH_STRATEGIES, WatchStrategy } from './strategies/watch-strategy';
   providers: [
     ImaxWatchStrategy,
     FourDxWatchStrategy,
+    ScreenXWatchStrategy,
     {
       provide: WATCH_STRATEGIES,
-      inject: [ImaxWatchStrategy, FourDxWatchStrategy],
-      useFactory: (imax: ImaxWatchStrategy, fourDx: FourDxWatchStrategy) =>
-        [imax, fourDx] satisfies WatchStrategy[],
+      inject: [ImaxWatchStrategy, FourDxWatchStrategy, ScreenXWatchStrategy],
+      useFactory: (
+        imax: ImaxWatchStrategy,
+        fourDx: FourDxWatchStrategy,
+        screenX: ScreenXWatchStrategy,
+      ) => [imax, fourDx, screenX] satisfies WatchStrategy[],
     },
     ScreeningWatchService,
   ],
