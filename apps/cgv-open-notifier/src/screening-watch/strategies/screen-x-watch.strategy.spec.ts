@@ -1,0 +1,45 @@
+import { ConfigService } from '@nestjs/config';
+import { resolve } from 'path';
+import { Screening } from '../../cgv/dto/screening.dto';
+import { ScreenXWatchStrategy } from './screen-x-watch.strategy';
+
+const buildScreening = (overrides: Partial<Screening>): Screening => ({
+  scnYmd: '20260825',
+  scnsNo: '018',
+  scnSseq: '1',
+  movNm: '영화 제목',
+  scnsrtTm: '1000',
+  scnendTm: '1220',
+  seatInfo: '100/120',
+  tcscnsGradCd: '01',
+  scnsEnm: '2D',
+  ...overrides,
+});
+
+describe('ScreenXWatchStrategy', () => {
+  const values: Record<string, string> = {
+    TELEGRAM_CHAT_ID_SCREENX: 'screenx-chat',
+    SCREENX_SNAPSHOT_PATH: 'data/screenx-snapshot.json',
+  };
+  const strategy = new ScreenXWatchStrategy({
+    getOrThrow: (key: string) => values[key],
+  } as unknown as ConfigService);
+
+  it('reads its label, chat and snapshot path from config', () => {
+    expect(strategy.label).toBe('SCREENX');
+    expect(strategy.chatId).toBe('screenx-chat');
+    expect(strategy.snapshotPath).toBe(
+      resolve(process.cwd(), 'data/screenx-snapshot.json'),
+    );
+  });
+
+  it('keeps only screenings with the SCREENX grade code (04)', () => {
+    const screenings: Screening[] = [
+      buildScreening({ scnSseq: '1', tcscnsGradCd: '04' }),
+      buildScreening({ scnSseq: '2', tcscnsGradCd: '02' }),
+      buildScreening({ scnSseq: '3', tcscnsGradCd: '03' }),
+    ];
+
+    expect(strategy.filter(screenings).map((s) => s.scnSseq)).toEqual(['1']);
+  });
+});
