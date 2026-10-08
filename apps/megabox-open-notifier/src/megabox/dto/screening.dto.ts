@@ -8,6 +8,8 @@ export interface RawScreeningItemResponse {
   restSeatCnt?: number;
   totSeatCnt?: number;
   playDe?: string;
+  theabKindCd?: string | null;
+  eventDivCd?: string | null;
 }
 
 export interface SchedulePageResponse {
@@ -26,4 +28,8 @@ export interface Screening {
   playEndTime: string;
   seatInfo: string;
   playDe: string;
+  /** 상영관 종류 코드 (DBC = DOLBY CINEMA) */
+  theabKindCd: string;
+  /** 이벤트 구분 코드 (MEK01 = 무대인사, MEK06 = GV). 이벤트가 아니면 빈 문자열 */
+  eventDivCd: string;
 }
