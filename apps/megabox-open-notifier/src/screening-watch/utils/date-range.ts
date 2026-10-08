@@ -1,6 +1,6 @@
-const START_OFFSET_DAYS = 6;
+const START_OFFSET_DAYS = 3;
 
-/** 오늘부터 6일 후 시작해서 horizonDays 만큼의 YYYYMMDD 목록 */
+/** 오늘부터 3일 후 시작해서 horizonDays 만큼의 YYYYMMDD 목록 */
 export function buildDateRange(horizonDays: number): string[] {
   const dates: string[] = [];
   const today = new Date();

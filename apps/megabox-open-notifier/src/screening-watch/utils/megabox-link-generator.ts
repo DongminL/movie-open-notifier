@@ -5,9 +5,9 @@ export interface MegaboxParams {
   playDe: string;
 }
 
-/** 극장 예매 시간표 페이지 URL 생성 */
+/** 지점 전체 상영시간표 페이지 URL 생성 */
 export function buildMegaboxWebUrl(params: MegaboxParams): string {
   const { brchNo, playDe } = params;
   const query = new URLSearchParams({ brchNo, playDe });
-  return `https://www.megabox.co.kr/specialtheater/dolby/time?${query.toString()}`;
+  return `https://www.megabox.co.kr/theater/time?${query.toString()}`;
 }
