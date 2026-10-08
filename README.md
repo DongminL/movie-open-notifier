@@ -1,11 +1,11 @@
 # 🎬 movie-open-notifier
 
-CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA) 예매 오픈을 감시해서 텔레그램으로 알림을 보내주는 NestJS 모노레포입니다.
+CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA, 무대인사, GV) 예매 오픈을 감시해서 텔레그램으로 알림을 보내주는 NestJS 모노레포입니다.
 
 ## 프로젝트 소개
 
 - `apps/cgv-open-notifier` — CGV 예매 오픈(IMAX, 4DX, SCREENX)을 감시해 텔레그램으로 알림
-- `apps/megabox-open-notifier` — 메가박스 예매 오픈(DOLBY CINEMA)을 감시해 텔레그램으로 알림
+- `apps/megabox-open-notifier` — 메가박스 예매 오픈(DOLBY CINEMA, 무대인사, GV)을 감시해 텔레그램으로 알림
 - `libs/common` — 공통 유틸/설정 (`@app/common`)
 - `libs/telegram` — 텔레그램 알림 연동 (`@app/telegram`)
 
@@ -59,11 +59,16 @@ CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA) 예매 오픈�
    `apps/megabox-open-notifier/.env`
    ```env
    TELEGRAM_BOT_TOKEN=
-   TELEGRAM_CHAT_ID=
+   TELEGRAM_CHAT_ID_DOLBY=            # DOLBY CINEMA 알림 채팅방 (기본 채팅방, 오류 알림도 여기로 전송)
+   TELEGRAM_CHAT_ID=                  # 생략하면 TELEGRAM_CHAT_ID_DOLBY 사용
+   TELEGRAM_CHAT_ID_STAGE_GREETING=   # 무대인사 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_DOLBY 사용)
+   TELEGRAM_CHAT_ID_GV=               # GV 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_DOLBY 사용)
    MEGABOX_SCHEDULE_URL=https://www.megabox.co.kr/on/oh/ohc/Brch/schedulePage.do
    WATCH_HORIZON_DAYS=25
    WATCH_POLL_INTERVAL_SEC=22
    DOLBY_SNAPSHOT_PATH=data/dolby-snapshot.json
+   STAGE_GREETING_SNAPSHOT_PATH=data/stage-greeting-snapshot.json
+   GV_SNAPSHOT_PATH=data/gv-snapshot.json
    ```
 
 ## 서버 실행
