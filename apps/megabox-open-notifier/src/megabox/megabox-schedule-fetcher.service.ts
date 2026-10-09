@@ -8,11 +8,10 @@ import {
 
 const RESPONSE_TIMEOUT_MS = 15000;
 export const BRCH_NO = '0019'; // 남양주현대아울렛스페이스원
-const THEAB_KIND_CD = 'DBC'; // DOLBY CINEMA
 
 /*
- * 메가박스 돌비시네마 상영정보 가져오기
- * theabKindCd1=DBC로 요청하면 서버가 돌비시네마 상영만 걸러서 반환
+ * 메가박스 지점의 하루치 전체 상영정보 가져오기
+ * 돌비시네마/무대인사/GV 구분은 응답의 theabKindCd, eventDivCd로 전략(WatchStrategy)이 필터링
  */
 @Injectable()
 export class MegaboxScheduleFetcherService {
@@ -30,12 +29,9 @@ export class MegaboxScheduleFetcherService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         masterType: 'brch',
-        detailType: 'spcl',
         firstAt: 'N',
         playDe,
         brchNo1: BRCH_NO,
-        spclbYn1: 'Y',
-        theabKindCd1: THEAB_KIND_CD,
       }),
       signal: AbortSignal.timeout(RESPONSE_TIMEOUT_MS),
     });
@@ -69,6 +65,8 @@ export class MegaboxScheduleFetcherService {
           ? `${item.restSeatCnt}/${item.totSeatCnt}`
           : '',
       playDe: item.playDe ?? playDe,
+      theabKindCd: item.theabKindCd ?? '',
+      eventDivCd: item.eventDivCd ?? '',
     }));
   }
 }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validationSchema } from './config/validation.schema';
-import { DolbyWatchModule } from './dolby-watch/dolby-watch.module';
+import { ScreeningWatchModule } from './screening-watch/screening-watch.module';
 
 @Module({
   imports: [
@@ -10,7 +10,7 @@ import { DolbyWatchModule } from './dolby-watch/dolby-watch.module';
       envFilePath: 'apps/megabox-open-notifier/.env',
       validationSchema,
     }),
-    DolbyWatchModule,
+    ScreeningWatchModule,
   ],
 })
 export class AppModule {}
