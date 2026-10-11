@@ -19,16 +19,17 @@ import {
   saveSnapshot,
   Snapshot,
 } from './utils/snapshot';
-import {
-  buildNewScreeningsMessage,
-  WATCH_THEATER,
-} from './utils/watch-message';
+import { buildNewScreeningsMessage } from './utils/watch-message';
 import { WATCH_STRATEGIES, WatchStrategy } from './strategies/watch-strategy';
 
 const TIMEOUT_NAME = 'screening-watch-cycle';
 const ERROR_NOTIFY_THRESHOLD = 5; // 연속 사이클 오류 알림 임계치
 
-/** 전략(상영 유형)별 감시 상태. 사이클 시작 시 currentSnapshot 이하 필드는 초기화된다. */
+/** 로그/알림에서 감시 대상을 구분하는 이름 (지점 + 상영 유형) */
+const watchName = ({ theaterName, label }: WatchStrategy): string =>
+  `${theaterName} ${label}`;
+
+/** 전략(상영 유형 × 지점)별 감시 상태. 사이클 시작 시 currentSnapshot 이하 필드는 초기화된다. */
 interface WatchState {
   strategy: WatchStrategy;
   previousSnapshot: Snapshot;
@@ -40,11 +41,11 @@ interface WatchState {
 }
 
 /*
- * 날짜 상관없이 남양주현대아울렛스페이스원의 DOLBY CINEMA, 무대인사, GV 등
+ * 날짜 상관없이 감시 대상 지점들의 DOLBY CINEMA, 무대인사, GV 등
  * 신규 오픈/회차 추가를 감지하는 감시자. 서버 기동 시 자동으로 시작되어,
  * 사이클마다 horizonDays 만큼의 날짜를 조회한다.
- * 날짜당 API는 1번만 호출하고, 그 응답을 전략(WatchStrategy)별로 필터링해
- * 각자의 스냅샷과 diff한 뒤 각자의 채팅방으로 알린다.
+ * 날짜당 API는 전 지점 합쳐 1번만 호출하고, 그 응답을 전략(상영 유형 × 지점)별로 필터링해
+ * 각자의 스냅샷과 diff한 뒤 각자의 채팅방(지점 토픽)으로 알린다.
  * 사이클 사이 대기 시간은 설정값 ±5초 랜덤.
  */
 @Injectable()
@@ -176,7 +177,7 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
     results.forEach((result, idx) => {
       if (result.status === 'rejected') {
         this.logger.error(
-          `${this.states[idx].strategy.label} 처리 실패`,
+          `${watchName(this.states[idx].strategy)} 처리 실패`,
           getErrorStack(result.reason as unknown),
         );
       }
@@ -202,7 +203,8 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
     index: number,
     total: number,
   ): Promise<void> {
-    const { label, chatId } = state.strategy;
+    const { label, chatId, threadId, theaterName } = state.strategy;
+    const name = watchName(state.strategy);
     const screenings = state.strategy.filter(allScreenings);
     const keys = screenings.map(buildScreeningKey);
     state.currentSnapshot[date] = keys;
@@ -219,28 +221,44 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
 
       if (newScreenings.length > 0) {
         this.logger.log(
-          `${date} ${label} 신규 ${newScreenings.length}건 발견 — 알림 전송`,
+          `${date} ${name} 신규 ${newScreenings.length}건 발견 — 알림 전송`,
         );
-        await this.telegramService.sendMessage(
+        const sent = await this.telegramService.sendMessage(
           buildNewScreeningsMessage(
             date,
             label,
             newScreenings,
             state.strategy.buildBookingUrl(date),
+            theaterName,
           ),
           chatId,
+          threadId,
         );
-        state.notifiedCount += newScreenings.length;
+
+        if (sent === false) {
+          // 이 날짜를 스냅샷에 반영하지 않아 다음 사이클에 다시 신규로 감지·재전송한다
+          this.logger.warn(
+            `${date} ${name} 알림 전송 실패 — 다음 사이클에 다시 시도`,
+          );
+          if (prevKeys) {
+            state.currentSnapshot[date] = prevKeys;
+          } else {
+            delete state.currentSnapshot[date];
+          }
+        } else {
+          state.notifiedCount += newScreenings.length;
+        }
       }
     }
 
     this.logger.log(
-      `(${index + 1}/${total}) ${date} ${label} ${screenings.length}건`,
+      `(${index + 1}/${total}) ${date} ${name} ${screenings.length}건`,
     );
   }
 
   private async finishCycle(state: WatchState): Promise<void> {
-    const { label, chatId, snapshotPath } = state.strategy;
+    const { chatId, threadId, snapshotPath } = state.strategy;
+    const name = watchName(state.strategy);
 
     // 이번 사이클에 조회 실패한 날짜는 currentSnapshot에 없음 — 그대로 교체하면
     // 그 날짜의 기존 상태가 유실되어 다음에 성공했을 때 전부 "신규"로 오인될 수 있으므로,
@@ -256,27 +274,36 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
     }
 
     if (state.isColdStart) {
-      state.isColdStart = false;
-      await this.telegramService.sendMessage(
-        `${WATCH_THEATER} ${label} 감시를 시작했습니다.\n` +
-          `현재 예정된 ${label} 상영: ${state.coldStartTotal}건\n` +
+      const sent = await this.telegramService.sendMessage(
+        `${name} 감시를 시작했습니다.\n` +
+          `현재 예정된 ${state.strategy.label} 상영: ${state.coldStartTotal}건\n` +
           `앞으로 새로 열리는 상영만 알려드립니다.`,
         chatId,
+        threadId,
       );
+
+      if (sent === false) {
+        // 시작 알림이 도착해야 설정(채팅방/토픽)이 정상임을 알 수 있으므로 다음 사이클에 다시 보낸다
+        this.logger.warn(
+          `${name} 시작 알림 전송 실패 — 다음 사이클에 다시 시도`,
+        );
+      } else {
+        state.isColdStart = false;
+      }
     } else if (state.notifiedCount === 0) {
-      this.logger.log(`${label} 신규 상영 없음 — 알림 없이 대기 (정상 동작)`);
+      this.logger.log(`${name} 신규 상영 없음 — 알림 없이 대기 (정상 동작)`);
     }
   }
 
   private restoreSnapshot(state: WatchState): void {
-    const { label, snapshotPath } = state.strategy;
+    const { snapshotPath } = state.strategy;
     try {
       const snapshot = loadSnapshot(snapshotPath);
       state.previousSnapshot = snapshot ?? {};
       state.isColdStart = snapshot === null;
     } catch (err) {
       this.logger.error(
-        `${label} 스냅샷 로드 실패, 콜드 스타트로 진행`,
+        `${watchName(state.strategy)} 스냅샷 로드 실패, 콜드 스타트로 진행`,
         getErrorStack(err),
       );
       state.previousSnapshot = {};
