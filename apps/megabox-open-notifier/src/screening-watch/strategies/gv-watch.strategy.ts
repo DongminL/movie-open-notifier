@@ -1,32 +1,26 @@
-import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { resolve } from 'path';
+import { Branch } from '../../megabox/branches';
 import { Screening } from '../../megabox/dto/screening.dto';
-import { BRCH_NO } from '../../megabox/megabox-schedule-fetcher.service';
-import { buildMegaboxWebUrl } from '../utils/megabox-link-generator';
-import { WatchStrategy } from './watch-strategy';
+import { BranchWatchStrategy } from './watch-strategy';
 
 const GV_EVENT_DIV_CD = 'MEK06';
 
-@Injectable()
-export class GvWatchStrategy implements WatchStrategy {
+export class GvWatchStrategy extends BranchWatchStrategy {
   readonly label = 'GV';
-  readonly chatId: string;
-  readonly snapshotPath: string;
 
-  constructor(configService: ConfigService) {
-    this.chatId = configService.getOrThrow<string>('TELEGRAM_CHAT_ID_GV');
-    this.snapshotPath = resolve(
-      process.cwd(),
-      configService.getOrThrow<string>('GV_SNAPSHOT_PATH'),
+  constructor(configService: ConfigService, branch: Branch) {
+    super(
+      configService,
+      branch,
+      'TELEGRAM_CHAT_ID_GV',
+      'GV_SNAPSHOT_PATH',
+      'TELEGRAM_TOPIC_ID_GV',
     );
   }
 
   filter(screenings: Screening[]): Screening[] {
-    return screenings.filter((s) => s.eventDivCd === GV_EVENT_DIV_CD);
-  }
-
-  buildBookingUrl(date: string): string {
-    return buildMegaboxWebUrl({ brchNo: BRCH_NO, playDe: date });
+    return this.inBranch(screenings).filter(
+      (s) => s.eventDivCd === GV_EVENT_DIV_CD,
+    );
   }
 }

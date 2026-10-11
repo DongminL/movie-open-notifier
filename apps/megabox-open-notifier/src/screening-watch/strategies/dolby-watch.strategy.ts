@@ -1,32 +1,26 @@
-import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { resolve } from 'path';
+import { Branch } from '../../megabox/branches';
 import { Screening } from '../../megabox/dto/screening.dto';
-import { BRCH_NO } from '../../megabox/megabox-schedule-fetcher.service';
-import { buildMegaboxWebUrl } from '../utils/megabox-link-generator';
-import { WatchStrategy } from './watch-strategy';
+import { BranchWatchStrategy } from './watch-strategy';
 
 const DOLBY_THEAB_KIND_CD = 'DBC';
 
-@Injectable()
-export class DolbyWatchStrategy implements WatchStrategy {
+export class DolbyWatchStrategy extends BranchWatchStrategy {
   readonly label = 'DOLBY CINEMA';
-  readonly chatId: string;
-  readonly snapshotPath: string;
 
-  constructor(configService: ConfigService) {
-    this.chatId = configService.getOrThrow<string>('TELEGRAM_CHAT_ID_DOLBY');
-    this.snapshotPath = resolve(
-      process.cwd(),
-      configService.getOrThrow<string>('DOLBY_SNAPSHOT_PATH'),
+  constructor(configService: ConfigService, branch: Branch) {
+    super(
+      configService,
+      branch,
+      'TELEGRAM_CHAT_ID_DOLBY',
+      'DOLBY_SNAPSHOT_PATH',
+      'TELEGRAM_TOPIC_ID_DOLBY',
     );
   }
 
   filter(screenings: Screening[]): Screening[] {
-    return screenings.filter((s) => s.theabKindCd === DOLBY_THEAB_KIND_CD);
-  }
-
-  buildBookingUrl(date: string): string {
-    return buildMegaboxWebUrl({ brchNo: BRCH_NO, playDe: date });
+    return this.inBranch(screenings).filter(
+      (s) => s.theabKindCd === DOLBY_THEAB_KIND_CD,
+    );
   }
 }

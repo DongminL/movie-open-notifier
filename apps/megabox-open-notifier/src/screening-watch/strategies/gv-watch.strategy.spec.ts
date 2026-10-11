@@ -1,7 +1,10 @@
 import { ConfigService } from '@nestjs/config';
 import { resolve } from 'path';
+import { Branch, WATCH_BRANCHES } from '../../megabox/branches';
 import { Screening } from '../../megabox/dto/screening.dto';
 import { GvWatchStrategy } from './gv-watch.strategy';
+
+const [PRIMARY, COEX] = WATCH_BRANCHES;
 
 const buildScreening = (overrides: Partial<Screening>): Screening => ({
   playSchdlNo: '2608260019001',
@@ -11,29 +14,46 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
   playEndTime: '12:20',
   seatInfo: '100/290',
   playDe: '20260826',
+  brchNo: PRIMARY.brchNo,
   theabKindCd: 'NOR',
   eventDivCd: '',
   ...overrides,
 });
 
 describe('GvWatchStrategy', () => {
-  const values: Record<string, string> = {
+  const values: Record<string, string | number> = {
     TELEGRAM_CHAT_ID_GV: 'gv-chat',
     GV_SNAPSHOT_PATH: 'data/gv-snapshot.json',
+    [`TELEGRAM_TOPIC_ID_GV_${COEX.brchNo}`]: 1351,
   };
-  const strategy = new GvWatchStrategy({
+  const config = {
     getOrThrow: (key: string) => values[key],
-  } as unknown as ConfigService);
+    get: (key: string) => values[key],
+  } as unknown as ConfigService;
+  const create = (branch: Branch): GvWatchStrategy =>
+    new GvWatchStrategy(config, branch);
 
-  it('reads its label, chat and snapshot path from config', () => {
+  it('reads its label, chat, theater and snapshot path from config', () => {
+    const strategy = create(PRIMARY);
+
     expect(strategy.label).toBe('GV');
     expect(strategy.chatId).toBe('gv-chat');
+    expect(strategy.theaterName).toBe(PRIMARY.name);
     expect(strategy.snapshotPath).toBe(
-      resolve(process.cwd(), 'data/gv-snapshot.json'),
+      resolve(process.cwd(), `data/gv-snapshot-${PRIMARY.brchNo}.json`),
     );
   });
 
-  it('keeps only screenings with eventDivCd MEK06', () => {
+  it('adds the branch code to the snapshot path and uses the branch topic for non-primary branches', () => {
+    const strategy = create(COEX);
+
+    expect(strategy.snapshotPath).toBe(
+      resolve(process.cwd(), `data/gv-snapshot-${COEX.brchNo}.json`),
+    );
+    expect(strategy.threadId).toBe(1351);
+  });
+
+  it('keeps only MEK06 screenings of its own branch', () => {
     const screenings: Screening[] = [
       buildScreening({ playSchdlNo: '1', eventDivCd: 'MEK06' }),
       buildScreening({ playSchdlNo: '2' }),
@@ -42,16 +62,28 @@ describe('GvWatchStrategy', () => {
         theabKindCd: 'DBC',
         eventDivCd: 'OTHER',
       }),
+      buildScreening({
+        playSchdlNo: '4',
+        eventDivCd: 'MEK06',
+        brchNo: COEX.brchNo,
+      }),
     ];
 
-    expect(strategy.filter(screenings).map((s) => s.playSchdlNo)).toEqual([
-      '1',
-    ]);
+    expect(
+      create(PRIMARY)
+        .filter(screenings)
+        .map((s) => s.playSchdlNo),
+    ).toEqual(['1']);
+    expect(
+      create(COEX)
+        .filter(screenings)
+        .map((s) => s.playSchdlNo),
+    ).toEqual(['4']);
   });
 
-  it('links to the general branch timetable, not the Dolby page', () => {
-    expect(strategy.buildBookingUrl('20260826')).toBe(
-      'https://www.megabox.co.kr/theater/time?brchNo=0019&playDe=20260826',
+  it('links to its own branch timetable page', () => {
+    expect(create(COEX).buildBookingUrl('20260826')).toBe(
+      `https://www.megabox.co.kr/theater/time?brchNo=${COEX.brchNo}&playDe=20260826`,
     );
   });
 });
