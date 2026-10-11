@@ -1,13 +1,12 @@
 import { Screening } from '../../megabox/dto/screening.dto';
 
-export const WATCH_THEATER = '남양주현대아울렛스페이스원';
-
 /** 날짜 하나에 대한 신규 상영 알림 메시지 */
 export function buildNewScreeningsMessage(
   date: string,
   label: string,
   added: Screening[],
   bookingUrl: string,
+  theaterName: string,
 ): string {
   const movieGroups = new Map<string, Screening[]>();
 
@@ -21,7 +20,7 @@ export function buildNewScreeningsMessage(
   }
 
   let body =
-    `메가박스 ${WATCH_THEATER} 상영 시간표\n` +
+    `메가박스 ${theaterName} 상영 시간표\n` +
     `${date.substring(0, 4)}년 ${date.substring(4, 6)}월 ${date.substring(6, 8)}일\n` +
     `${label} 오픈\n\n`;
 
