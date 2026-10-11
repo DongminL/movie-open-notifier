@@ -13,6 +13,7 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
   playEndTime: '12:20',
   seatInfo: '100/290',
   playDe: '20260826',
+  brchNo: '0019',
   theabKindCd: 'DBC',
   eventDivCd: '',
   ...overrides,
