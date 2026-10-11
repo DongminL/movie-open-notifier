@@ -20,24 +20,37 @@ describe('MegaboxScheduleFetcherService', () => {
     });
   };
 
-  it('requests with only masterType, firstAt, playDe and brchNo1', async () => {
+  it('requests all watched branches in a single call via brchNo1..N', async () => {
     mockResponse([]);
 
     await service.fetchScreenings('20260826');
 
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     const init = fetchMock.mock.calls[0][1];
     expect(JSON.parse(init.body) as unknown).toEqual({
       masterType: 'brch',
       firstAt: 'N',
       playDe: '20260826',
       brchNo1: '0019',
+      brchNo2: '1351',
+      brchNo3: '1212',
     });
   });
 
   it('maps theabKindCd and eventDivCd, defaulting null to empty string', async () => {
     mockResponse([
-      { playSchdlNo: '1', theabKindCd: 'DBC', eventDivCd: 'MEK01' },
-      { playSchdlNo: '2', theabKindCd: 'NOR', eventDivCd: null },
+      {
+        playSchdlNo: '1',
+        brchNo: '0019',
+        theabKindCd: 'DBC',
+        eventDivCd: 'MEK01',
+      },
+      {
+        playSchdlNo: '2',
+        brchNo: '0019',
+        theabKindCd: 'NOR',
+        eventDivCd: null,
+      },
     ]);
 
     const result = await service.fetchScreenings('20260826');
@@ -46,5 +59,25 @@ describe('MegaboxScheduleFetcherService', () => {
       ['DBC', 'MEK01'],
       ['NOR', ''],
     ]);
+  });
+
+  it('throws when items come back but none carries brchNo', async () => {
+    mockResponse([{ playSchdlNo: '1' }, { playSchdlNo: '2' }]);
+
+    await expect(service.fetchScreenings('20260826')).rejects.toThrow(/brchNo/);
+  });
+
+  it('returns an empty list without error when there are no items', async () => {
+    mockResponse([]);
+
+    await expect(service.fetchScreenings('20260826')).resolves.toEqual([]);
+  });
+
+  it('maps brchNo so callers can tell branches apart', async () => {
+    mockResponse([{ playSchdlNo: '1', brchNo: '1351' }, { playSchdlNo: '2' }]);
+
+    const result = await service.fetchScreenings('20260826');
+
+    expect(result.map((s) => s.brchNo)).toEqual(['1351', '']);
   });
 });

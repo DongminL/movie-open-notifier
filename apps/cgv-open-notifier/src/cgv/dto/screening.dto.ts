@@ -28,3 +28,24 @@ export interface Screening {
   tcscnsGradCd: string;
   scnsEnm: string;
 }
+
+/** 원본 응답 항목을 Screening으로 변환 (누락 값은 빈 문자열, scnYmd는 조회 날짜로 대체) */
+export function toScreening(
+  item: RawScreeningItemResponse,
+  fallbackScnYmd: string,
+): Screening {
+  return {
+    scnYmd: item.scnYmd ?? fallbackScnYmd,
+    scnsNo: item.scnsNo ?? '',
+    scnSseq: item.scnSseq ?? '',
+    movNm: item.movNm ?? '',
+    scnsrtTm: item.scnsrtTm ?? '',
+    scnendTm: item.scnendTm ?? '',
+    seatInfo:
+      item.frSeatCnt && item.cpSeatCnt
+        ? `${item.frSeatCnt}/${item.cpSeatCnt}`
+        : (item.frSeatCnt ?? ''),
+    tcscnsGradCd: item.tcscnsGradCd ?? '',
+    scnsEnm: item.scnsEnm ?? '',
+  };
+}

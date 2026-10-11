@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { WATCH_BRANCHES } from './branches';
 import {
   Screening,
   SchedulePageResponse,
   RawScreeningItemResponse,
+  toScreening,
 } from './dto/screening.dto';
 
 const RESPONSE_TIMEOUT_MS = 15000;
-export const BRCH_NO = '0019'; // 남양주현대아울렛스페이스원
 
 /*
- * 메가박스 지점의 하루치 전체 상영정보 가져오기
- * 돌비시네마/무대인사/GV 구분은 응답의 theabKindCd, eventDivCd로 전략(WatchStrategy)이 필터링
+ * 감시 대상 전 지점의 하루치 전체 상영정보를 한 번의 요청(brchNo1..N)으로 가져오기
+ * 지점 구분은 응답의 brchNo, 돌비시네마/무대인사/GV 구분은 theabKindCd, eventDivCd로
+ * 전략(WatchStrategy)이 필터링
  */
 @Injectable()
 export class MegaboxScheduleFetcherService {
@@ -31,7 +33,9 @@ export class MegaboxScheduleFetcherService {
         masterType: 'brch',
         firstAt: 'N',
         playDe,
-        brchNo1: BRCH_NO,
+        ...Object.fromEntries(
+          WATCH_BRANCHES.map((b, i) => [`brchNo${i + 1}`, b.brchNo]),
+        ),
       }),
       signal: AbortSignal.timeout(RESPONSE_TIMEOUT_MS),
     });
@@ -54,19 +58,14 @@ export class MegaboxScheduleFetcherService {
   ): Screening[] {
     const items: RawScreeningItemResponse[] = body.megaMap?.movieFormList ?? [];
 
-    return items.map((item) => ({
-      playSchdlNo: item.playSchdlNo ?? '',
-      movieNm: item.movieNm ?? '',
-      screenType: item.theabExpoNm ?? '',
-      playStartTime: item.playStartTime ?? '',
-      playEndTime: item.playEndTime ?? '',
-      seatInfo:
-        item.restSeatCnt != null && item.totSeatCnt != null
-          ? `${item.restSeatCnt}/${item.totSeatCnt}`
-          : '',
-      playDe: item.playDe ?? playDe,
-      theabKindCd: item.theabKindCd ?? '',
-      eventDivCd: item.eventDivCd ?? '',
-    }));
+    // 지점 구분이 brchNo에 의존하므로, 응답 구조가 바뀌어 전부 비면 빈 결과로 오인해
+    // 스냅샷이 비워지고 이후 전 회차가 신규로 알려지지 않도록 오류로 처리한다
+    if (items.length > 0 && items.every((item) => !item.brchNo)) {
+      throw new Error(
+        '메가박스 스케줄 응답에 brchNo가 없습니다 (응답 구조 변경 가능성)',
+      );
+    }
+
+    return items.map((item) => toScreening(item, playDe));
   }
 }

@@ -9,6 +9,7 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
   playEndTime: '12:20',
   seatInfo: '100/290',
   playDe: '20260826',
+  brchNo: '1351',
   theabKindCd: 'DBC',
   eventDivCd: '',
   ...overrides,
@@ -21,11 +22,10 @@ describe('buildNewScreeningsMessage', () => {
       'DOLBY CINEMA',
       [buildScreening({})],
       'https://example.com/book',
+      '코엑스',
     );
 
-    expect(message).toContain(
-      '메가박스 남양주현대아울렛스페이스원 상영 시간표',
-    );
+    expect(message).toContain('메가박스 코엑스 상영 시간표');
     expect(message).toContain('2026년 08월 26일');
     expect(message).toContain('DOLBY CINEMA 오픈');
     expect(message).toContain('🎬 영화 제목');
@@ -39,6 +39,7 @@ describe('buildNewScreeningsMessage', () => {
       '무대인사',
       [buildScreening({})],
       'https://example.com/book',
+      '홍대',
     );
 
     expect(message).toContain('무대인사 오픈');

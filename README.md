@@ -63,12 +63,25 @@ CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA, 무대인사, G
    TELEGRAM_CHAT_ID=                  # 생략하면 TELEGRAM_CHAT_ID_DOLBY 사용
    TELEGRAM_CHAT_ID_STAGE_GREETING=   # 무대인사 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_DOLBY 사용)
    TELEGRAM_CHAT_ID_GV=               # GV 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_DOLBY 사용)
+   # 상영 유형 × 지점별 토픽(message_thread_id). 포럼(토픽) 활성화된 그룹에서 해당 토픽으로 전송. 생략하면 토픽 없이 전송
+   # 지점 코드: 0019 남양주현대아울렛스페이스원 / 1351 코엑스 / 1212 홍대
+   TELEGRAM_TOPIC_ID_DOLBY_0019=
+   TELEGRAM_TOPIC_ID_DOLBY_1351=
+   TELEGRAM_TOPIC_ID_DOLBY_1212=
+   TELEGRAM_TOPIC_ID_STAGE_GREETING_0019=
+   TELEGRAM_TOPIC_ID_STAGE_GREETING_1351=
+   TELEGRAM_TOPIC_ID_STAGE_GREETING_1212=
+   TELEGRAM_TOPIC_ID_GV_0019=
+   TELEGRAM_TOPIC_ID_GV_1351=
+   TELEGRAM_TOPIC_ID_GV_1212=
    MEGABOX_SCHEDULE_URL=https://www.megabox.co.kr/on/oh/ohc/Brch/schedulePage.do
    WATCH_HORIZON_DAYS=25
    WATCH_POLL_INTERVAL_SEC=22
    DOLBY_SNAPSHOT_PATH=data/dolby-snapshot.json
    STAGE_GREETING_SNAPSHOT_PATH=data/stage-greeting-snapshot.json
    GV_SNAPSHOT_PATH=data/gv-snapshot.json
+   # 위 *_SNAPSHOT_PATH는 기준 경로이며, 실제 파일은 지점마다 `-{brchNo}`가 붙는다
+   # (예: data/dolby-snapshot-0019.json, data/dolby-snapshot-1351.json, data/dolby-snapshot-1212.json)
    ```
 
 ## 서버 실행
