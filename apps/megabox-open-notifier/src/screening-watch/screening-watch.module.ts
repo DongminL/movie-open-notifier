@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MegaboxModule } from '../megabox/megabox.module';
+import { WATCH_BRANCHES } from '../megabox/branches';
 import { TelegramModule } from '@app/telegram';
 import { ScreeningWatchService } from './screening-watch.service';
 import { DolbyWatchStrategy } from './strategies/dolby-watch.strategy';
@@ -11,17 +13,15 @@ import { WATCH_STRATEGIES, WatchStrategy } from './strategies/watch-strategy';
 @Module({
   imports: [ScheduleModule.forRoot(), MegaboxModule, TelegramModule],
   providers: [
-    DolbyWatchStrategy,
-    StageGreetingWatchStrategy,
-    GvWatchStrategy,
     {
       provide: WATCH_STRATEGIES,
-      inject: [DolbyWatchStrategy, StageGreetingWatchStrategy, GvWatchStrategy],
-      useFactory: (
-        dolby: DolbyWatchStrategy,
-        stageGreeting: StageGreetingWatchStrategy,
-        gv: GvWatchStrategy,
-      ) => [dolby, stageGreeting, gv] satisfies WatchStrategy[],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): WatchStrategy[] =>
+        WATCH_BRANCHES.flatMap((branch) => [
+          new DolbyWatchStrategy(configService, branch),
+          new StageGreetingWatchStrategy(configService, branch),
+          new GvWatchStrategy(configService, branch),
+        ]),
     },
     ScreeningWatchService,
   ],
