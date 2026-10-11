@@ -7,6 +7,7 @@ import {
   Screening,
   SearchMovScnInfoResponse,
   RawScreeningItemResponse,
+  toScreening,
 } from './dto/screening.dto';
 
 const RESPONSE_TIMEOUT_MS = 30000; // Cloudflare 챌린지 통과에 20초가 부족한 경우가 있어 여유를 둠
@@ -178,19 +179,6 @@ export class CgvScheduleFetcherService {
   ): Screening[] {
     const items: RawScreeningItemResponse[] = body.data ?? [];
 
-    return items.map((item) => ({
-      scnYmd: item.scnYmd ?? scnYmd,
-      scnsNo: item.scnsNo ?? '',
-      scnSseq: item.scnSseq ?? '',
-      movNm: item.movNm ?? '',
-      scnsrtTm: item.scnsrtTm ?? '',
-      scnendTm: item.scnendTm ?? '',
-      seatInfo:
-        item.frSeatCnt && item.cpSeatCnt
-          ? `${item.frSeatCnt}/${item.cpSeatCnt}`
-          : (item.frSeatCnt ?? ''),
-      tcscnsGradCd: item.tcscnsGradCd ?? '',
-      scnsEnm: item.scnsEnm ?? '',
-    }));
+    return items.map((item) => toScreening(item, scnYmd));
   }
 }

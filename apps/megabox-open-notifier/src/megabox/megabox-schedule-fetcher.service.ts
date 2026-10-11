@@ -5,6 +5,7 @@ import {
   Screening,
   SchedulePageResponse,
   RawScreeningItemResponse,
+  toScreening,
 } from './dto/screening.dto';
 
 const RESPONSE_TIMEOUT_MS = 15000;
@@ -65,20 +66,6 @@ export class MegaboxScheduleFetcherService {
       );
     }
 
-    return items.map((item) => ({
-      playSchdlNo: item.playSchdlNo ?? '',
-      movieNm: item.movieNm ?? '',
-      screenType: item.theabExpoNm ?? '',
-      playStartTime: item.playStartTime ?? '',
-      playEndTime: item.playEndTime ?? '',
-      seatInfo:
-        item.restSeatCnt != null && item.totSeatCnt != null
-          ? `${item.restSeatCnt}/${item.totSeatCnt}`
-          : '',
-      playDe: item.playDe ?? playDe,
-      brchNo: item.brchNo ?? '',
-      theabKindCd: item.theabKindCd ?? '',
-      eventDivCd: item.eventDivCd ?? '',
-    }));
+    return items.map((item) => toScreening(item, playDe));
   }
 }
