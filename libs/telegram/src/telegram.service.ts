@@ -19,11 +19,16 @@ export class TelegramService {
     this.chatId = this.configService.getOrThrow<string>('TELEGRAM_CHAT_ID');
   }
 
-  /** chatId를 생략하면 TELEGRAM_CHAT_ID(기본 IMAX 채팅방)로 전송 */
+  /**
+   * chatId를 생략하면 TELEGRAM_CHAT_ID(기본 IMAX/Dolby 채팅방)로 전송.
+   * threadId를 주면 포럼형 그룹의 해당 토픽(message_thread_id)으로 전송.
+   * 실패해도 예외를 던지지 않고 false를 반환한다(호출자가 재시도 여부를 판단).
+   */
   async sendMessage(
     message: string,
     chatId: string = this.chatId,
-  ): Promise<void> {
+    threadId?: number,
+  ): Promise<boolean> {
     const truncated =
       message.length > MAX_MESSAGE_LENGTH
         ? `${message.substring(0, MAX_MESSAGE_LENGTH)}\n\n...(생략)`
@@ -32,9 +37,12 @@ export class TelegramService {
     try {
       await this.bot.telegram.sendMessage(chatId, truncated, {
         parse_mode: 'Markdown',
+        ...(threadId !== undefined && { message_thread_id: threadId }),
       });
+      return true;
     } catch (error) {
       this.logger.error('Telegram 메시지 발송 실패', getErrorStack(error));
+      return false;
     }
   }
 }

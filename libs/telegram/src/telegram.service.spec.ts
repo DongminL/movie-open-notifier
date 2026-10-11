@@ -43,6 +43,15 @@ describe('TelegramService', () => {
     });
   });
 
+  it('sends into the given topic thread when threadId is provided', async () => {
+    await service.sendMessage('메시지', 'other-chat-id', 42);
+
+    expect(sendMessage).toHaveBeenCalledWith('other-chat-id', '메시지', {
+      parse_mode: 'Markdown',
+      message_thread_id: 42,
+    });
+  });
+
   it('truncates messages longer than 4000 characters', async () => {
     const longMessage = 'a'.repeat(4100);
 
@@ -53,9 +62,13 @@ describe('TelegramService', () => {
     expect(sentText.endsWith('...(생략)')).toBe(true);
   });
 
-  it('swallows send failures instead of throwing', async () => {
+  it('returns true when the message was sent', async () => {
+    await expect(service.sendMessage('메시지')).resolves.toBe(true);
+  });
+
+  it('swallows send failures instead of throwing and returns false', async () => {
     sendMessage.mockRejectedValueOnce(new Error('network error'));
 
-    await expect(service.sendMessage('메시지')).resolves.toBeUndefined();
+    await expect(service.sendMessage('메시지')).resolves.toBe(false);
   });
 });
