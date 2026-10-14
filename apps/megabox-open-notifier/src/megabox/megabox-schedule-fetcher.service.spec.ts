@@ -67,6 +67,22 @@ describe('MegaboxScheduleFetcherService', () => {
     await expect(service.fetchScreenings('20260826')).rejects.toThrow(/brchNo/);
   });
 
+  it('throws when movieFormList is not an array', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({ statCd: 0, megaMap: { movieFormList: 'oops' } }),
+    });
+
+    await expect(service.fetchScreenings('20260826')).rejects.toThrow(/형식/);
+  });
+
+  it('throws when an item is not an object', async () => {
+    mockResponse([null]);
+
+    await expect(service.fetchScreenings('20260826')).rejects.toThrow(/형식/);
+  });
+
   it('returns an empty list without error when there are no items', async () => {
     mockResponse([]);
 

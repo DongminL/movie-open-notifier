@@ -6,19 +6,20 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { getErrorStack, sleep } from '@app/common';
-import { CgvScheduleFetcherService } from '../cgv/cgv-schedule-fetcher.service';
-import { Screening } from '../cgv/dto/screening.dto';
-import { TelegramService } from '@app/telegram';
-import { buildDateRange } from './utils/date-range';
 import {
-  buildScreeningKey,
+  buildDateRange,
   diffNewScreenings,
+  getErrorStack,
   hasSnapshotChanged,
   loadSnapshot,
   saveSnapshot,
+  sleep,
   Snapshot,
-} from './utils/snapshot';
+} from '@app/common';
+import { CgvScheduleFetcherService } from '../cgv/cgv-schedule-fetcher.service';
+import { Screening } from '../cgv/dto/screening.dto';
+import { TelegramService } from '@app/telegram';
+import { buildScreeningKey } from './utils/screening-key';
 import {
   buildNewScreeningsMessage,
   WATCH_THEATER,
@@ -220,11 +221,23 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
         this.logger.log(
           `${date} ${label} 신규 ${newScreenings.length}건 발견 — 알림 전송`,
         );
-        await this.telegramService.sendMessage(
+        const sent = await this.telegramService.sendMessage(
           buildNewScreeningsMessage(date, label, newScreenings),
           chatId,
         );
-        state.notifiedCount += newScreenings.length;
+
+        if (sent === false) {
+          this.logger.warn(
+            `${date} ${label} 알림 전송 실패 — 다음 사이클에 다시 시도`,
+          );
+          if (prevKeys) {
+            state.currentSnapshot[date] = prevKeys;
+          } else {
+            delete state.currentSnapshot[date];
+          }
+        } else {
+          state.notifiedCount += newScreenings.length;
+        }
       }
     }
 
@@ -250,13 +263,21 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
     }
 
     if (state.isColdStart) {
-      state.isColdStart = false;
-      await this.telegramService.sendMessage(
+      const sent = await this.telegramService.sendMessage(
         `${WATCH_THEATER} ${label} 감시를 시작했습니다.\n` +
           `현재 예정된 ${label} 상영: ${state.coldStartTotal}건\n` +
           `앞으로 새로 열리는 상영만 알려드립니다.`,
         chatId,
       );
+
+      if (sent === false) {
+        // 시작 알림이 도착해야 설정(채팅방)이 정상임을 알 수 있으므로 다음 사이클에 다시 보낸다
+        this.logger.warn(
+          `${label} 시작 알림 전송 실패 — 다음 사이클에 다시 시도`,
+        );
+      } else {
+        state.isColdStart = false;
+      }
     } else if (state.notifiedCount === 0) {
       this.logger.log(`${label} 신규 상영 없음 — 알림 없이 대기 (정상 동작)`);
     }
