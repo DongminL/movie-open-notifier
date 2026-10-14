@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { mkdir, rename, writeFile } from 'fs/promises';
+import { mkdir, rename, rm, writeFile } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { dirname } from 'path';
 import * as Joi from 'joi';
@@ -61,6 +61,11 @@ export async function saveSnapshot(
   await mkdir(dirname(path), { recursive: true });
   // 동시 저장 시 파일이 섞여 깨지지 않도록 임시 파일에 쓴 뒤 원자적으로 교체한다
   const tmpPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
-  await writeFile(tmpPath, JSON.stringify(snapshot, null, 2), 'utf-8');
-  await rename(tmpPath, path);
+  try {
+    await writeFile(tmpPath, JSON.stringify(snapshot, null, 2), 'utf-8');
+    await rename(tmpPath, path);
+  } catch (error) {
+    await rm(tmpPath, { force: true });
+    throw error;
+  }
 }
