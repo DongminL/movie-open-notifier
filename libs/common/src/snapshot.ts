@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from 'fs';
-import { mkdir, writeFile } from 'fs/promises';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { mkdir, rename, writeFile } from 'fs/promises';
+import { randomUUID } from 'crypto';
 import { dirname } from 'path';
 import * as Joi from 'joi';
 
@@ -30,9 +31,14 @@ export function diffNewScreenings<T>(
   return items.filter((_, idx) => !prevKeySet || !prevKeySet.has(keys[idx]));
 }
 
-/** 스냅샷 파일이 없으면 null, 있으면 파싱된 내용을 반환 (파싱/형식 검증 실패 시 예외 전파) */
+/**
+ * 스냅샷 파일이 없거나 비어 있으면 null(콜드 스타트), 있으면 파싱된 내용을 반환 (파싱/형식 검증 실패 시 예외 전파).
+ * 파일이 없으면 빈 스냅샷 `{}`으로 미리 만들어 둔다 — 첫 사이클 전에 재시작돼도 콜드 스타트로 취급된다.
+ */
 export function loadSnapshot(path: string): Snapshot | null {
   if (!existsSync(path)) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, '{}', 'utf-8');
     return null;
   }
 
@@ -44,7 +50,8 @@ export function loadSnapshot(path: string): Snapshot | null {
     );
   }
 
-  return parsed as Snapshot;
+  const snapshot = parsed as Snapshot;
+  return Object.keys(snapshot).length === 0 ? null : snapshot;
 }
 
 export async function saveSnapshot(
@@ -52,5 +59,8 @@ export async function saveSnapshot(
   snapshot: Snapshot,
 ): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, JSON.stringify(snapshot, null, 2), 'utf-8');
+  // 동시 저장 시 파일이 섞여 깨지지 않도록 임시 파일에 쓴 뒤 원자적으로 교체한다
+  const tmpPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+  await writeFile(tmpPath, JSON.stringify(snapshot, null, 2), 'utf-8');
+  await rename(tmpPath, path);
 }

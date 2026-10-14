@@ -50,8 +50,25 @@ describe('snapshot file', () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('returns null when the file does not exist', () => {
-    expect(loadSnapshot(join(dir, 'missing.json'))).toBeNull();
+  it('returns null and creates an empty snapshot file when the file does not exist', async () => {
+    const path = join(dir, 'missing.json');
+
+    expect(loadSnapshot(path)).toBeNull();
+    expect(JSON.parse(await readFile(path, 'utf-8'))).toEqual({});
+  });
+
+  it('creates missing parent directories when the file does not exist', async () => {
+    const path = join(dir, 'data', 'nested', 'snap.json');
+
+    expect(loadSnapshot(path)).toBeNull();
+    expect(JSON.parse(await readFile(path, 'utf-8'))).toEqual({});
+  });
+
+  it('returns null for an empty snapshot object (cold start)', async () => {
+    const path = join(dir, 'empty.json');
+    await writeFile(path, '{}', 'utf-8');
+
+    expect(loadSnapshot(path)).toBeNull();
   });
 
   it('round-trips a snapshot, creating parent directories', async () => {
