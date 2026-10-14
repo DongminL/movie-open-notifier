@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as Joi from 'joi';
 import { HTTPResponse } from 'puppeteer';
 import { sleep } from '@app/common';
 import { PuppeteerBrowserService } from './puppeteer-browser.service';
@@ -16,6 +17,13 @@ const SITE_NM = '용산아이파크몰';
 
 // Cloudflare __cf_bm 쿠키 통상 수명(~30분)보다 보수적으로 잡은 세션 재사용 유효 시간
 const SESSION_TTL_MS = 20 * 60 * 1000;
+
+// data가 없거나 null이면 상영 없음으로 취급, 있으면 객체 배열이어야 한다
+const responseSchema = Joi.object({
+  data: Joi.array().items(Joi.object().unknown()).allow(null),
+})
+  .unknown()
+  .required();
 
 /** 크롤링 없이 재사용할 CGV 세션 (Cloudflare 쿠키 + 요청 헤더) */
 interface CgvSession {
@@ -49,7 +57,10 @@ export class CgvScheduleFetcherService {
     if (this.session && Date.now() - this.session.capturedAt < SESSION_TTL_MS) {
       try {
         return await this.fetchViaDirectRequest(this.session, scnYmd);
-      } catch {
+      } catch (err) {
+        this.logger.warn(
+          `직접 요청 실패, 브라우저로 세션을 재발급합니다: ${err instanceof Error ? err.message : String(err)}`,
+        );
         this.session = null; // 쿠키 만료/차단으로 간주하고 아래에서 브라우저로 재발급
       }
     }
@@ -173,11 +184,17 @@ export class CgvScheduleFetcherService {
     );
   }
 
-  private parseScreenings(
-    body: SearchMovScnInfoResponse,
-    scnYmd: string,
-  ): Screening[] {
-    const items: RawScreeningItemResponse[] = body.data ?? [];
+  private parseScreenings(body: unknown, scnYmd: string): Screening[] {
+    // 응답 구조가 바뀌어 빈 결과로 오인되면 스냅샷이 비워져 전 회차가 신규로 알려지므로 오류로 처리한다
+    const { error } = responseSchema.validate(body);
+    if (error) {
+      throw new Error(
+        `CGV 스케줄 응답 형식이 올바르지 않습니다: ${error.message}`,
+      );
+    }
+
+    const items: RawScreeningItemResponse[] =
+      (body as SearchMovScnInfoResponse).data ?? [];
 
     return items.map((item) => toScreening(item, scnYmd));
   }
