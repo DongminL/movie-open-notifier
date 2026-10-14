@@ -6,19 +6,20 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { getErrorStack, sleep } from '@app/common';
-import { CgvScheduleFetcherService } from '../cgv/cgv-schedule-fetcher.service';
-import { Screening } from '../cgv/dto/screening.dto';
-import { TelegramService } from '@app/telegram';
-import { buildDateRange } from './utils/date-range';
 import {
-  buildScreeningKey,
+  buildDateRange,
   diffNewScreenings,
+  getErrorStack,
   hasSnapshotChanged,
   loadSnapshot,
   saveSnapshot,
+  sleep,
   Snapshot,
-} from './utils/snapshot';
+} from '@app/common';
+import { CgvScheduleFetcherService } from '../cgv/cgv-schedule-fetcher.service';
+import { Screening } from '../cgv/dto/screening.dto';
+import { TelegramService } from '@app/telegram';
+import { buildScreeningKey } from './utils/screening-key';
 import {
   buildNewScreeningsMessage,
   WATCH_THEATER,
