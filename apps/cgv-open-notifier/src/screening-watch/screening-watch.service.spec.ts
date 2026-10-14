@@ -162,6 +162,43 @@ describe('ScreeningWatchService', () => {
     );
   });
 
+  it('retries the start message on the next cycle when it failed to send', async () => {
+    fetchScreenings.mockResolvedValue(allScreenings);
+    sendMessage.mockResolvedValue(false as unknown as void);
+    await runCycle();
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue(undefined);
+
+    await runCycle();
+
+    expect(sendMessage).toHaveBeenCalledTimes(3);
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('4DX 감시를 시작'),
+      '4dx-chat',
+    );
+  });
+
+  it('re-detects a new screening on the next cycle when its notification failed', async () => {
+    fetchScreenings.mockResolvedValue(allScreenings);
+    await runCycle();
+    sendMessage.mockClear();
+
+    const newFourDx = buildScreening({ scnSseq: '3', tcscnsGradCd: '02' });
+    fetchScreenings.mockResolvedValue([...allScreenings, newFourDx]);
+    sendMessage.mockResolvedValue(false as unknown as void);
+    await runCycle();
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue(undefined);
+
+    await runCycle();
+
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('4DX 오픈'),
+      '4dx-chat',
+    );
+  });
+
   it('does not notify anyone when nothing changed after the cold start', async () => {
     fetchScreenings.mockResolvedValue(allScreenings);
     await runCycle();
