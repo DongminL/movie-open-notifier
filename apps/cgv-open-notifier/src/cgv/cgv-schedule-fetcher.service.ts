@@ -112,7 +112,7 @@ export class CgvScheduleFetcherService {
       );
 
       // goto 자체가 타임아웃/에러가 나도 응답은 이미 캡처됐을 수 있으므로, 완료 판단은
-      // 아래 waitForResponse(및 그 안의 20초 타이머)에 전적으로 맡기고 goto 에러는 무시한다.
+      // 아래 waitForResponse(및 그 안의 30초 타이머)에 전적으로 맡기고 goto 에러는 무시한다.
       const targetUrl = `${this.imaxUrl}?siteNo=${SITE_NO}&siteNm=${SITE_NM}&scnYmd=${scnYmd}`;
       page
         .goto(targetUrl, {
