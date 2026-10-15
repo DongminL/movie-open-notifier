@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { mkdir, mkdtemp, rm } from 'fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { TelegramService } from '@app/telegram';
@@ -61,6 +61,29 @@ const coexScreenings = [
 ];
 const allScreenings = [...primaryScreenings, ...coexScreenings];
 
+// 가짜 시계는 Date만 대체한다 (조회 날짜가 오늘 기준으로 계산되므로)
+const useFakeDate = (now: Date): void => {
+  jest.useFakeTimers({
+    now,
+    doNotFake: [
+      'hrtime',
+      'nextTick',
+      'performance',
+      'queueMicrotask',
+      'requestAnimationFrame',
+      'cancelAnimationFrame',
+      'requestIdleCallback',
+      'cancelIdleCallback',
+      'setImmediate',
+      'clearImmediate',
+      'setInterval',
+      'clearInterval',
+      'setTimeout',
+      'clearTimeout',
+    ],
+  });
+};
+
 describe('ScreeningWatchService', () => {
   let dir: string;
   let fetchScreenings: jest.Mock<Promise<Screening[]>, [string]>;
@@ -109,6 +132,7 @@ describe('ScreeningWatchService', () => {
   });
 
   afterEach(async () => {
+    jest.useRealTimers();
     await rm(dir, { recursive: true, force: true });
   });
 
@@ -282,6 +306,22 @@ describe('ScreeningWatchService', () => {
       'gv-chat',
       undefined,
     );
+  });
+
+  it('drops dates that rolled out of the watch range from the snapshot file', async () => {
+    useFakeDate(new Date(2026, 7, 1));
+    fetchScreenings.mockResolvedValue(allScreenings);
+    const dolbyPath = join(dir, `dolby-${PRIMARY.brchNo}.json`);
+    const savedDates = async (): Promise<string[]> =>
+      Object.keys(JSON.parse(await readFile(dolbyPath, 'utf-8')) as object);
+
+    await runCycle();
+    expect(await savedDates()).toEqual(['20260804']);
+
+    jest.setSystemTime(new Date(2026, 7, 2));
+    await runCycle();
+
+    expect(await savedDates()).toEqual(['20260805']);
   });
 
   it('does not notify anyone when nothing changed after the cold start', async () => {
