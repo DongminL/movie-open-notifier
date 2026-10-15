@@ -5,8 +5,100 @@ import {
   diffNewScreenings,
   hasSnapshotChanged,
   loadSnapshot,
+  mergeSnapshot,
+  reconcileSnapshot,
   saveSnapshot,
 } from './snapshot';
+
+describe('reconcileSnapshot', () => {
+  const activeDates = ['20260825'];
+
+  it('saves when only past dates were pruned', () => {
+    const previous = { '20260101': ['old'], '20260825': ['a'] };
+
+    expect(
+      reconcileSnapshot(previous, { '20260825': ['a'] }, activeDates, false),
+    ).toEqual({ snapshot: { '20260825': ['a'] }, shouldSave: true });
+  });
+
+  it('saves when keys changed', () => {
+    expect(
+      reconcileSnapshot(
+        { '20260825': ['a'] },
+        { '20260825': ['a', 'b'] },
+        activeDates,
+        true,
+      ),
+    ).toEqual({ snapshot: { '20260825': ['a', 'b'] }, shouldSave: true });
+  });
+
+  it('does not save when nothing changed and nothing was pruned', () => {
+    expect(
+      reconcileSnapshot(
+        { '20260825': ['a'] },
+        { '20260825': ['a'] },
+        activeDates,
+        false,
+      ),
+    ).toEqual({ snapshot: { '20260825': ['a'] }, shouldSave: false });
+  });
+
+  it('keeps the previous snapshot instead of overwriting it with an empty one', () => {
+    const previous = { '20260101': ['old'] };
+
+    expect(reconcileSnapshot(previous, {}, activeDates, false)).toEqual({
+      snapshot: previous,
+      shouldSave: false,
+    });
+  });
+
+  it('does not save when both previous and merged snapshots are empty', () => {
+    expect(reconcileSnapshot({}, {}, activeDates, false)).toEqual({
+      snapshot: {},
+      shouldSave: false,
+    });
+  });
+});
+
+describe('mergeSnapshot', () => {
+  it('drops dates outside the active dates (e.g. past dates)', () => {
+    const previous = { '20260101': ['old'], '20260825': ['a'] };
+
+    expect(mergeSnapshot(previous, {}, ['20260825'])).toEqual({
+      '20260825': ['a'],
+    });
+  });
+
+  it('keeps the previous value for an active date that failed this cycle', () => {
+    const previous = { '20260825': ['a'], '20260826': ['b'] };
+    const current = { '20260826': ['b', 'c'] };
+
+    expect(mergeSnapshot(previous, current, ['20260825', '20260826'])).toEqual({
+      '20260825': ['a'],
+      '20260826': ['b', 'c'],
+    });
+  });
+
+  it('prefers the current value over the previous one', () => {
+    expect(
+      mergeSnapshot({ '20260825': ['a'] }, { '20260825': ['z'] }, ['20260825']),
+    ).toEqual({ '20260825': ['z'] });
+  });
+
+  it('omits active dates that have neither a previous nor current value', () => {
+    expect(mergeSnapshot({}, {}, ['20260825'])).toEqual({});
+  });
+
+  it('does not mutate its inputs', () => {
+    const previous = { '20260101': ['old'] };
+    const current = { '20260825': ['a'] };
+
+    mergeSnapshot(previous, current, ['20260825']);
+
+    expect(previous).toEqual({ '20260101': ['old'] });
+    expect(current).toEqual({ '20260825': ['a'] });
+  });
+});
 
 describe('hasSnapshotChanged', () => {
   it('is true when there was no previous snapshot', () => {
