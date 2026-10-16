@@ -21,6 +21,45 @@ export const hasSnapshotChanged = (
   prevKeys.length !== keys.length ||
   keys.some((k, idx) => k !== prevKeys[idx]);
 
+/**
+ * 감시 범위(activeDates)에 속한 날짜만 남긴 새 스냅샷을 만든다 — 지나간 날짜가 누적되지 않게 한다.
+ * 이번 사이클에 조회 실패한 날짜는 current에 없으므로 previous 값을 보존한다.
+ */
+export function mergeSnapshot(
+  previous: Snapshot,
+  current: Snapshot,
+  activeDates: string[],
+): Snapshot {
+  const merged: Snapshot = {};
+  for (const date of activeDates) {
+    const keys = current[date] ?? previous[date];
+    if (keys) merged[date] = keys;
+  }
+  return merged;
+}
+
+/**
+ * 사이클 종료 시 저장할 스냅샷과 저장 여부를 정한다 (키 변경 또는 지나간 날짜 정리가 있으면 저장).
+ * 정리 결과가 비어 있으면 기존 스냅샷을 유지한다 — 빈 파일은 재시작 시 콜드 스타트로 오인되어 신규 알림이 유실된다.
+ */
+export function reconcileSnapshot(
+  previous: Snapshot,
+  current: Snapshot,
+  activeDates: string[],
+  keysChanged: boolean,
+): { snapshot: Snapshot; shouldSave: boolean } {
+  const merged = mergeSnapshot(previous, current, activeDates);
+  const mergedSize = Object.keys(merged).length;
+  const previousSize = Object.keys(previous).length;
+
+  if (mergedSize === 0) return { snapshot: previous, shouldSave: false };
+
+  return {
+    snapshot: merged,
+    shouldSave: keysChanged || mergedSize !== previousSize,
+  };
+}
+
 /** 콜드 스타트가 아닐 때, 이전 스냅샷에 없던 신규 항목만 추려낸다 (keys[i]는 items[i]의 키) */
 export function diffNewScreenings<T>(
   prevKeys: string[] | undefined,

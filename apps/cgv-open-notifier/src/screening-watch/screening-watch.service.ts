@@ -12,6 +12,7 @@ import {
   getErrorStack,
   hasSnapshotChanged,
   loadSnapshot,
+  reconcileSnapshot,
   saveSnapshot,
   sleep,
   Snapshot,
@@ -158,7 +159,7 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
       `사이클 종료 (${Math.round((Date.now() - cycleStartedAt) / 1000)}초 소요)`,
     );
 
-    await this.forEachStrategy((state) => this.finishCycle(state));
+    await this.forEachStrategy((state) => this.finishCycle(state, dates));
   }
 
   /*
@@ -246,20 +247,20 @@ export class ScreeningWatchService implements OnApplicationBootstrap {
     );
   }
 
-  private async finishCycle(state: WatchState): Promise<void> {
+  private async finishCycle(state: WatchState, dates: string[]): Promise<void> {
     const { label, chatId, snapshotPath } = state.strategy;
 
-    // 이번 사이클에 조회 실패한 날짜는 currentSnapshot에 없음 — 그대로 교체하면
-    // 그 날짜의 기존 상태가 유실되어 다음에 성공했을 때 전부 "신규"로 오인될 수 있으므로,
-    // 실패한 날짜는 이전 스냅샷 값을 그대로 보존한다(스프레드 덮어쓰기로 자동 처리됨).
-    const mergedSnapshot: Snapshot = {
-      ...state.previousSnapshot,
-      ...state.currentSnapshot,
-    };
+    // 감시 범위 이전 날짜는 버리고, 이번 사이클에 조회 실패한 날짜는 이전 값을 보존한다.
+    const { snapshot, shouldSave } = reconcileSnapshot(
+      state.previousSnapshot,
+      state.currentSnapshot,
+      dates,
+      state.snapshotChanged,
+    );
 
-    state.previousSnapshot = mergedSnapshot;
-    if (state.snapshotChanged) {
-      await saveSnapshot(snapshotPath, mergedSnapshot);
+    state.previousSnapshot = snapshot;
+    if (shouldSave) {
+      await saveSnapshot(snapshotPath, snapshot);
     }
 
     if (state.isColdStart) {
