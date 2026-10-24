@@ -5,6 +5,7 @@ const TOPIC_ID_PREFIXES = [
   'TELEGRAM_TOPIC_ID_DOLBY',
   'TELEGRAM_TOPIC_ID_STAGE_GREETING',
   'TELEGRAM_TOPIC_ID_GV',
+  'TELEGRAM_TOPIC_ID_GOODS_PACKAGE',
 ];
 
 const topicIdSchemas = Object.fromEntries(
@@ -29,7 +30,11 @@ export const validationSchema = Joi.object({
   ),
   // GV 알림 채팅방. 미설정이면 TELEGRAM_CHAT_ID_DOLBY로 폴백
   TELEGRAM_CHAT_ID_GV: Joi.string().default(Joi.ref('TELEGRAM_CHAT_ID_DOLBY')),
-  // 상영 유형 × 지점별 텔레그램 토픽(TELEGRAM_TOPIC_ID_{DOLBY|STAGE_GREETING|GV}_{brchNo}).
+  // 굿즈패키지 알림 채팅방. 미설정이면 TELEGRAM_CHAT_ID_DOLBY로 폴백
+  TELEGRAM_CHAT_ID_GOODS_PACKAGE: Joi.string().default(
+    Joi.ref('TELEGRAM_CHAT_ID_DOLBY'),
+  ),
+  // 상영 유형 × 지점별 텔레그램 토픽(TELEGRAM_TOPIC_ID_{DOLBY|STAGE_GREETING|GV|GOODS_PACKAGE}_{brchNo}).
   // 미설정이면 토픽 없이 채팅방 기본 위치로 전송
   ...topicIdSchemas,
   MEGABOX_SCHEDULE_URL: Joi.string()
@@ -42,4 +47,7 @@ export const validationSchema = Joi.object({
     'data/stage-greeting-snapshot.json',
   ),
   GV_SNAPSHOT_PATH: Joi.string().default('data/gv-snapshot.json'),
+  GOODS_PACKAGE_SNAPSHOT_PATH: Joi.string().default(
+    'data/goods-package-snapshot.json',
+  ),
 });

@@ -12,6 +12,7 @@ describe('validationSchema', () => {
     expect(error).toBeUndefined();
     expect(value.TELEGRAM_CHAT_ID_STAGE_GREETING).toBe('-100');
     expect(value.TELEGRAM_CHAT_ID_GV).toBe('-100');
+    expect(value.TELEGRAM_CHAT_ID_GOODS_PACKAGE).toBe('-100');
   });
 
   it('keeps separately configured stage greeting and GV chats', () => {
@@ -19,10 +20,12 @@ describe('validationSchema', () => {
       ...base,
       TELEGRAM_CHAT_ID_STAGE_GREETING: '-200',
       TELEGRAM_CHAT_ID_GV: '-300',
+      TELEGRAM_CHAT_ID_GOODS_PACKAGE: '-400',
     }) as { value: Record<string, unknown> };
 
     expect(value.TELEGRAM_CHAT_ID_STAGE_GREETING).toBe('-200');
     expect(value.TELEGRAM_CHAT_ID_GV).toBe('-300');
+    expect(value.TELEGRAM_CHAT_ID_GOODS_PACKAGE).toBe('-400');
   });
 
   it('treats blank topic ids as unset instead of failing validation', () => {
@@ -40,11 +43,13 @@ describe('validationSchema', () => {
       ...base,
       TELEGRAM_TOPIC_ID_DOLBY_1351: '11',
       TELEGRAM_TOPIC_ID_GV_1212: '22',
+      TELEGRAM_TOPIC_ID_GOODS_PACKAGE_1212: '33',
     }) as { value: Record<string, unknown>; error?: Error };
 
     expect(error).toBeUndefined();
     expect(value.TELEGRAM_TOPIC_ID_DOLBY_1351).toBe(11);
     expect(value.TELEGRAM_TOPIC_ID_GV_1212).toBe(22);
+    expect(value.TELEGRAM_TOPIC_ID_GOODS_PACKAGE_1212).toBe(33);
     expect(value.TELEGRAM_TOPIC_ID_STAGE_GREETING_0019).toBeUndefined();
   });
 });

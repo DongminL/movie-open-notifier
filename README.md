@@ -1,11 +1,11 @@
 # 🎬 movie-open-notifier
 
-CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA, 무대인사, GV) 예매 오픈을 감시해서 텔레그램으로 알림을 보내주는 NestJS 모노레포입니다.
+CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA, 무대인사, GV, 굿즈패키지) 예매 오픈을 감시해서 텔레그램으로 알림을 보내주는 NestJS 모노레포입니다.
 
 ## 프로젝트 소개
 
 - `apps/cgv-open-notifier` — CGV 예매 오픈(IMAX, 4DX, SCREENX)을 감시해 텔레그램으로 알림
-- `apps/megabox-open-notifier` — 메가박스 예매 오픈(DOLBY CINEMA, 무대인사, GV)을 감시해 텔레그램으로 알림
+- `apps/megabox-open-notifier` — 메가박스 예매 오픈(DOLBY CINEMA, 무대인사, GV, 굿즈패키지)을 감시해 텔레그램으로 알림
 - `libs/common` — 공통 유틸/설정 (`@app/common`)
 - `libs/telegram` — 텔레그램 알림 연동 (`@app/telegram`)
 
@@ -59,29 +59,44 @@ CGV, 메가박스의 특별관(IMAX, 4DX, SCREENX, DOLBY CINEMA, 무대인사, G
    `apps/megabox-open-notifier/.env`
    ```env
    TELEGRAM_BOT_TOKEN=
-   TELEGRAM_CHAT_ID_DOLBY=            # DOLBY CINEMA 알림 채팅방 (기본 채팅방, 오류 알림도 여기로 전송)
-   TELEGRAM_CHAT_ID=                  # 생략하면 TELEGRAM_CHAT_ID_DOLBY 사용
-   TELEGRAM_CHAT_ID_STAGE_GREETING=   # 무대인사 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_DOLBY 사용)
-   TELEGRAM_CHAT_ID_GV=               # GV 알림 채팅방 (생략하면 TELEGRAM_CHAT_ID_DOLBY 사용)
-   # 상영 유형 × 지점별 토픽(message_thread_id). 포럼(토픽) 활성화된 그룹에서 해당 토픽으로 전송. 생략하면 토픽 없이 전송
-   # 지점 코드: 0019 남양주현대아울렛스페이스원 / 1351 코엑스 / 1212 홍대
+
+   # 유형별 알림 채팅방 + 지점별 토픽(message_thread_id)
+   # - DOLBY 채팅방은 필수(기본 채팅방, 오류 알림도 여기로 전송). 나머지 채팅방은 생략하면 DOLBY 방 사용
+   # - 토픽은 포럼(토픽) 활성화된 그룹에서만 사용. 생략하면 토픽 없이 전송
+   # - 지점 코드: 0019 남양주현대아울렛스페이스원 / 1351 코엑스 / 1212 홍대
+   TELEGRAM_CHAT_ID_DOLBY=
    TELEGRAM_TOPIC_ID_DOLBY_0019=
    TELEGRAM_TOPIC_ID_DOLBY_1351=
    TELEGRAM_TOPIC_ID_DOLBY_1212=
+
+   TELEGRAM_CHAT_ID_STAGE_GREETING=
    TELEGRAM_TOPIC_ID_STAGE_GREETING_0019=
    TELEGRAM_TOPIC_ID_STAGE_GREETING_1351=
    TELEGRAM_TOPIC_ID_STAGE_GREETING_1212=
+
+   TELEGRAM_CHAT_ID_GV=
    TELEGRAM_TOPIC_ID_GV_0019=
    TELEGRAM_TOPIC_ID_GV_1351=
    TELEGRAM_TOPIC_ID_GV_1212=
+
+   TELEGRAM_CHAT_ID_GOODS_PACKAGE=
+   TELEGRAM_TOPIC_ID_GOODS_PACKAGE_0019=
+   TELEGRAM_TOPIC_ID_GOODS_PACKAGE_1351=
+   TELEGRAM_TOPIC_ID_GOODS_PACKAGE_1212=
+
    MEGABOX_SCHEDULE_URL=https://www.megabox.co.kr/on/oh/ohc/Brch/schedulePage.do
    WATCH_HORIZON_DAYS=25
    WATCH_POLL_INTERVAL_SEC=22
+   ```
+
+   선택 항목 (생략 가능, 기본값 사용)
+   ```env
+   TELEGRAM_CHAT_ID=                  # 기본 오류 알림 채팅방 (기본값: TELEGRAM_CHAT_ID_DOLBY)
    DOLBY_SNAPSHOT_PATH=data/dolby-snapshot.json
    STAGE_GREETING_SNAPSHOT_PATH=data/stage-greeting-snapshot.json
    GV_SNAPSHOT_PATH=data/gv-snapshot.json
-   # 위 *_SNAPSHOT_PATH는 기준 경로이며, 실제 파일은 지점마다 `-{brchNo}`가 붙는다
-   # (예: data/dolby-snapshot-0019.json, data/dolby-snapshot-1351.json, data/dolby-snapshot-1212.json)
+   GOODS_PACKAGE_SNAPSHOT_PATH=data/goods-package-snapshot.json
+   # *_SNAPSHOT_PATH는 기준 경로이며, 실제 파일은 지점마다 `-{brchNo}`가 붙는다 (예: data/dolby-snapshot-0019.json)
    ```
 
 ## 서버 실행
