@@ -6,6 +6,7 @@ import { WATCH_BRANCHES } from '../megabox/branches';
 import { TelegramModule } from '@app/telegram';
 import { ScreeningWatchService } from './screening-watch.service';
 import { DolbyWatchStrategy } from './strategies/dolby-watch.strategy';
+import { GoodsPackageWatchStrategy } from './strategies/goods-package-watch.strategy';
 import { GvWatchStrategy } from './strategies/gv-watch.strategy';
 import { StageGreetingWatchStrategy } from './strategies/stage-greeting-watch.strategy';
 import { WATCH_STRATEGIES, WatchStrategy } from './strategies/watch-strategy';
@@ -21,6 +22,7 @@ import { WATCH_STRATEGIES, WatchStrategy } from './strategies/watch-strategy';
           new DolbyWatchStrategy(configService, branch),
           new StageGreetingWatchStrategy(configService, branch),
           new GvWatchStrategy(configService, branch),
+          new GoodsPackageWatchStrategy(configService, branch),
         ]),
     },
     ScreeningWatchService,
