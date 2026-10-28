@@ -9,6 +9,7 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
   scnsrtTm: '1000',
   scnendTm: '1220',
   seatInfo: '100/120',
+  isPreparing: false,
   tcscnsGradCd: '03',
   scnsEnm: 'IMAX',
   ...overrides,
@@ -17,5 +18,11 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
 describe('buildScreeningKey', () => {
   it('joins scnYmd, scnsNo, scnSseq with a pipe', () => {
     expect(buildScreeningKey(buildScreening({}))).toBe('20260825|018|1');
+  });
+
+  it('appends |prep for preparing screenings so the open transition is a new key', () => {
+    expect(buildScreeningKey(buildScreening({ isPreparing: true }))).toBe(
+      '20260825|018|1|prep',
+    );
   });
 });

@@ -25,6 +25,7 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
   scnsrtTm: '1000',
   scnendTm: '1220',
   seatInfo: '100/120',
+  isPreparing: false,
   tcscnsGradCd: '01',
   scnsEnm: '2D',
   ...overrides,
@@ -149,6 +150,41 @@ describe('ScreeningWatchService', () => {
     expect(sendMessage).toHaveBeenCalledTimes(1);
     expect(sendMessage).toHaveBeenCalledWith(
       expect.stringContaining('4DX 오픈'),
+      '4dx-chat',
+    );
+  });
+
+  it('notifies once when a screening is preparing and again when booking opens', async () => {
+    fetchScreenings.mockResolvedValue(allScreenings);
+    await runCycle();
+    sendMessage.mockClear();
+
+    const preparing = buildScreening({
+      scnSseq: '3',
+      tcscnsGradCd: '02',
+      seatInfo: '예매 준비중',
+      isPreparing: true,
+    });
+    fetchScreenings.mockResolvedValue([...allScreenings, preparing]);
+    await runCycle();
+
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('좌석수: 예매 준비중'),
+      '4dx-chat',
+    );
+
+    sendMessage.mockClear();
+    await runCycle();
+    expect(sendMessage).not.toHaveBeenCalled();
+
+    const opened = buildScreening({ scnSseq: '3', tcscnsGradCd: '02' });
+    fetchScreenings.mockResolvedValue([...allScreenings, opened]);
+    await runCycle();
+
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.stringContaining('좌석수: 100/120'),
       '4dx-chat',
     );
   });
