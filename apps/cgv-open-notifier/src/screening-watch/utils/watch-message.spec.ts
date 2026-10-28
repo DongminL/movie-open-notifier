@@ -9,6 +9,7 @@ const buildScreening = (overrides: Partial<Screening>): Screening => ({
   scnsrtTm: '1000',
   scnendTm: '1220',
   seatInfo: '100/120',
+  isPreparing: false,
   tcscnsGradCd: '03',
   scnsEnm: 'IMAX',
   ...overrides,

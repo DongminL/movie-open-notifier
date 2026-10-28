@@ -23,6 +23,7 @@ describe('toScreening (cgv)', () => {
       scnsrtTm: '1000',
       scnendTm: '1200',
       seatInfo: '10/100',
+      isPreparing: false,
       tcscnsGradCd: '04',
       scnsEnm: 'IMAX',
     });
@@ -37,6 +38,7 @@ describe('toScreening (cgv)', () => {
       scnsrtTm: '',
       scnendTm: '',
       seatInfo: '',
+      isPreparing: false,
       tcscnsGradCd: '',
       scnsEnm: '',
     });
@@ -44,5 +46,25 @@ describe('toScreening (cgv)', () => {
 
   it('falls back to frSeatCnt alone when cpSeatCnt is missing', () => {
     expect(toScreening({ frSeatCnt: '7' }, '20260826').seatInfo).toBe('7');
+  });
+
+  it('marks cntlYn Y as preparing and replaces the seat info', () => {
+    const screening = toScreening(
+      { cntlYn: 'Y', frSeatCnt: '0', cpSeatCnt: '144' },
+      '20260826',
+    );
+
+    expect(screening.isPreparing).toBe(true);
+    expect(screening.seatInfo).toBe('예매 준비중');
+  });
+
+  it('keeps the seat info when cntlYn is N', () => {
+    const screening = toScreening(
+      { cntlYn: 'N', frSeatCnt: '10', cpSeatCnt: '144' },
+      '20260826',
+    );
+
+    expect(screening.isPreparing).toBe(false);
+    expect(screening.seatInfo).toBe('10/144');
   });
 });
